@@ -27,6 +27,8 @@ class SuRequestHandler(
     lateinit var policy: SuPolicy
         private set
 
+    val isReady get() = ::policy.isInitialized
+
     // Return true to indicate undetermined policy, require user interaction
     suspend fun start(intent: Intent): Boolean {
         if (!init(intent))

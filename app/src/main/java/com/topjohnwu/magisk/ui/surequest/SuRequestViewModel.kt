@@ -35,6 +35,7 @@ import com.topjohnwu.magisk.utils.TextHolder
 import com.topjohnwu.magisk.utils.Utils
 import kotlinx.coroutines.launch
 import me.tatarka.bindingcollectionadapter2.ItemBinding
+import timber.log.Timber
 import java.util.concurrent.TimeUnit.SECONDS
 
 class SuRequestViewModel(
@@ -73,7 +74,7 @@ class SuRequestViewModel(
     val itemBinding = ItemBinding.of<String>(BR.item, R.layout.item_spinner)
 
     private val handler = SuRequestHandler(AppContext.packageManager, policyDB)
-    private lateinit var timer: CountDownTimer
+    private var timer: CountDownTimer? = null
 
     fun grantPressed() {
         cancelTimer()
@@ -121,7 +122,14 @@ class SuRequestViewModel(
     }
 
     private fun respond(action: Int) {
-        timer.cancel()
+        timer?.cancel()
+        timer = null
+
+        if (!handler.isReady) {
+            Timber.d("SuRequestViewModel: respond called before handler was initialized, dismissing")
+            DieEvent().publish()
+            return
+        }
 
         val pos = selectedItemPosition
         timeoutPrefs.edit().putInt(handler.policy.packageName, pos).apply()
@@ -132,7 +140,8 @@ class SuRequestViewModel(
     }
 
     private fun cancelTimer() {
-        timer.cancel()
+        timer?.cancel()
+        timer = null
         denyText.seconds = 0
     }
 
